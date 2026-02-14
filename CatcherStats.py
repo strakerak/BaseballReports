@@ -142,27 +142,6 @@ def applyPitchEdits(pdf,pitcherlist,pitchershapelist):
     #print(pitchershapelist)
 
 #END FUNCDEF
-#WE NEED PER CATCHER ON ALL TEAMS:
-
-#WHETHER OR NOT CATCHER IS A COOG (easy)
-
-#BALLS AND STRIKES PER CALL
-#THROW X AND THROW Y ON THE ZONE
-
-#Counts:
-#how many catches (length of thing per catcher)
-#zone strike %
-#strikes stolen (out of zone strikes)
-#strikes lost (in zone balls)
-#score (??????)
-
-#FORMAT: [[[Pitcher],[Call],[Width,Height]]]
-
-#ShapeList: Circle, Square, Diamond, Triangle Up, Triangle Down, Pentagon Up, Hexagon, Triangle Left, Triangle Right, Pentagon Down, Three Star, Four Star, Five Star, Six Star
-
-#Done:
-#PitchersFaced per catcher
-
 #print(HitData)
 def genStats(filestring,outputname_catcher):
     print(filestring)
@@ -173,12 +152,23 @@ def genStats(filestring,outputname_catcher):
 
     HitData = pd.read_csv(filestring)
 
-    #FUNCDEF
+    #SPECIFIC ITEMS HERE
 
-    MinWidth=((-17.04/2))
-    MaxWidth=((17.04/2))
-    MinHeight=((19.44))
-    MaxHeight=((38.52))
+    BATTER_TEAM = "HOU_COU"
+    TEAM_LOGO_FILE = "UH_Logo.png"
+    WIDTH_ADJUSTMENT = 16
+    HEIGHT_ADJUSTMENT = 16
+    MinWidth= ((-17.04/2)) #Zone left in inches
+    MaxWidth=((17.04/2)) #Zone right in inches
+    MinHeight=((19.44)) #Zone bottom (Above home plate) in inches
+    MaxHeight=((38.52)) #Zone top in inches
+    MAX_BALL_PLACEMENT_HEIGHT = 45.20 #Excludes if too high for PDF placement
+    MIN_BALL_PLACEMENT_HEIGHT = -14 #Excludes if too low for pdf placement
+    MAX_BALL_PLACEMENT_WIDTH = 40#excludes if too much to the right
+    MIN_BALL_PLACEMENT_WIDTH = -40 #excludes if too much to the left
+
+    #END SPECIFIC ITEMS
+    
     HitData = HitData.sort_values(by=["Catcher","Pitcher"])
     HitData = HitData.dropna(how='all')
     CatchData = HitData[["Catcher","CatcherTeam","Pitcher","PitchCall","PlateLocHeight","PlateLocSide","Strikes","BatterSide"]]
@@ -378,7 +368,7 @@ def genStats(filestring,outputname_catcher):
         pdf.add_page()
         pdf.set_font('helvetica','B',20)
         pdf.set_fill_color(200,16,46)
-        pdf.image(os.getcwd()+"\\ImgFiles\\UH_Logo.png",10,8,20)
+        pdf.image(os.getcwd()+f"\\ImgFiles\\{TEAM_LOGO_FILE}",10,8,20)
         pdf.cell(0,12,CatcherData["CatcherName"].values[index].split(",")[1] + " " + CatcherData["CatcherName"].values[index].split(",")[0] + " - " +CatcherData["CatcherTeam"].values[index],False,1,'C')
         pdf.set_font('helvetica','B',15)
         pdf.cell(pdf.epw+8,8,DateString,False,ln=True,align='R')
@@ -419,18 +409,18 @@ def genStats(filestring,outputname_catcher):
             pdf.set_xy(FourSliceOriginArray[CatcherSixes][0],FourSliceOriginArray[CatcherSixes][1])
             for throw in CatcherData[ArrStrings[CatcherSixes]].values[index]:
                 #print(throw,ArrStrings[CatcherSixes])
-                width = (throw[2][0]*12*25.4)/16
-                height = ((throw[2][1]*12*25.4) - (19.44*25.4))/16
+                width = (throw[2][0]*12*25.4)/WIDTH_ADJUSTMENT
+                height = ((throw[2][1]*12*25.4) - (19.44*25.4))/HEIGHT_ADJUSTMENT
 
                 if(math.isnan(height) or math.isnan(width)):
                     continue
-                elif(height>45.20):
+                elif(height>MAX_BALL_PLACEMENT_HEIGHT):
                     continue
-                elif(height<-14):
+                elif(height<MIN_BALL_PLACEMENT_HEIGHT):
                     continue
-                elif(width<-40):
+                elif(width<MIN_BALL_PLACEMENT_WIDTH):
                     continue
-                elif(width>40):
+                elif(width>MAX_BALL_PLACEMENT_WIDTH):
                     continue
 
                 if throw[1][0][0]=='S':

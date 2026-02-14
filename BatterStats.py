@@ -118,39 +118,21 @@ def applyPitchEdits(pdf):
     pdf.text(257,108,"Other")
 
 #END FUNCDEF
-#WE NEED PER PLAYER:
-
-#how many chases (swings on pithces out of zone, ho wmany were hit over out of zone)
-#seen which is fastball, changeup, or slider in a pie char, tiny, we can make bigger
-
-
-#DONE:
-#how many hard hits (pitch over 95mph)
-#how many hits over the whole game
-#plate appearances over the whole game
-#pitches over the whole game
-#pithces per plate appearances (divide)
-#how many strikeouts over the whole game
-#how many walks over the whole game
-#how many BIP (how many batted balls were in play, over total balls in play)
-#how many strikes out of the total pitches
-#how many swings over the total pitches
-#how many whiffs (strikes on swing) out of all the swings
-#average EV (Exit Velocity)
-
-#PER PLATE APPERANCE
-
-#Pitches, swings over pitches, whiffs over swings, swings over chases
-
-#
-
-#MAPPED OUT ON IMAGES:
-# Strike zone, type of pitch, result in zone (ball, foul ball no field, in play, strike call, strike swinging, ball in dirt
-# point on field where ball lands
-#
-
-#print(HitData)
 def genStats(filestring,outputname_batter):
+    #SPECIFIC ITEMS HERE
+    BATTER_TEAM = "HOU_COU"
+    TEAM_LOGO_FILE = "UH_Logo.png"
+    WIDTH_ADJUSTMENT = 16
+    HEIGHT_ADJUSTMENT = 16
+    MinWidth= ((-17.04/2)) #Zone left in inches
+    MaxWidth=((17.04/2)) #Zone right in inches
+    MinHeight=((19.44)) #Zone bottom (Above home plate) in inches
+    MaxHeight=((38.52)) #Zone top in inches
+    MAX_BALL_PLACEMENT_HEIGHT = 32.70 #Excludes if too high for PDF placement
+    MIN_BALL_PLACEMENT_HEIGHT = -13 #Excludes if too low for pdf placement
+    MAX_BALL_PLACEMENT_WIDTH = 35 #excludes if too much to the right
+    MIN_BALL_PLACEMENT_WIDTH = -35 #excludes if too much to the left
+    #END SPECIFIC ITEMS
     print(filestring)
     pd.options.display.max_rows = 100
     pd.options.display.max_columns = 100
@@ -161,14 +143,11 @@ def genStats(filestring,outputname_batter):
 
     #FUNCDEF
 
-    MinWidth= ((-17.04/2))
-    MaxWidth=((17.04/2))
-    MinHeight=((19.44))
-    MaxHeight=((38.52))
+    
     HitData = HitData.sort_values(by=["Batter","PitchNo"])
     HitData = HitData.dropna(how='all')
     BatterData = HitData[["Batter","BatterTeam","PitchNo","PitchofPA","PAofInning","TaggedPitchType","AutoPitchType","PitchCall","KorBB","TaggedHitType","PlayResult","ExitSpeed","Angle","Direction","Date","Time","ZoneSpeed","PlateLocHeight","PlateLocSide"]]
-    BatterData = BatterData[BatterData.BatterTeam == "HOU_COU"]
+    BatterData = BatterData[BatterData.BatterTeam == f"{BATTER_TEAM}"]
     #print(BatterData)
     try:
         DateString = HitData["Date"].values[0].split("-")
@@ -443,8 +422,6 @@ def genStats(filestring,outputname_batter):
     ABData = ABData.iloc[::-1].reset_index(drop=True)
     PlayerData = PlayerData.iloc[::-1].reset_index(drop=True)
 
-    #print(PlayerData)
-    #print(ABData)
     FourSliceArray = [[30,60],[170,60],[30,130],[170,130]]
     FourSliceStrikeArray = [[20,75],[160,75],[20,145],[160,145]]
     FourSliceOriginArray = [[36.25,109],[176.25,109],[36.25,179],[176.25,179]]
@@ -461,7 +438,7 @@ def genStats(filestring,outputname_batter):
             pdf.add_page()
             pdf.set_font('helvetica','B',20)
             pdf.set_fill_color(200,16,46)
-            pdf.image(os.getcwd()+"\\ImgFiles\\UH_Logo.png",10,8,20)
+            pdf.image(os.getcwd()+f"\\ImgFiles\\{TEAM_LOGO_FILE}",10,8,20)
             pdf.cell(0,12,PlayerData["Batter"].values[index].split(",")[1] + " " + PlayerData["Batter"].values[index].split(",")[0] + " - Post Game Hitter Report",False,1,'C')
             pdf.set_font('helvetica','B',15)
             pdf.cell(pdf.epw+8,8,DateString,False,ln=True,align='R')
@@ -483,8 +460,8 @@ def genStats(filestring,outputname_batter):
             create_table_statline([["PA","Pitches","PPA","Hits","Strikeouts","Walks","Strikes","Swings","Whiffs","Chases","BIP","HardHit","AvgEV","Balls"]],True,pdf)
             create_table_statline([PlayerData.loc[index][2:]],False,pdf)
             pdf.set_font('helvetica','B',10)
-            pdf.line(pdf.epw/2+9,67,pdf.epw/2+9,190) #vert line
-            pdf.line(10,125,270,125)#horiz line
+            pdf.line(pdf.epw/2+9,67,pdf.epw/2+9,190) #vert line in center
+            pdf.line(10,125,270,125)#horiz line in center
             #Putting in at bats
             ABFours = 0
             applyPitchEdits(pdf)
@@ -515,22 +492,22 @@ def genStats(filestring,outputname_batter):
                 pdf.set_fill_color(0,0,0)
                 pdf.set_xy(FourSliceOriginArray[ABFours][0],FourSliceOriginArray[ABFours][1])
                 for i in range(0,len(ABData["ZoneArray"].values[ABIndexCounter])):
-                    width = (ABData["ZoneArray"].values[ABIndexCounter][i][0]*12*25.4)/16
-                    height = ((ABData["ZoneArray"].values[ABIndexCounter][i][1]*12*25.4)-(19.44*25.4))/16
+                    width = (ABData["ZoneArray"].values[ABIndexCounter][i][0]*12*25.4)/WIDTH_ADJUSTMENT
+                    height = ((ABData["ZoneArray"].values[ABIndexCounter][i][1]*12*25.4)-(19.44*25.4))/HEIGHT_ADJUSTMENT
                     #print(width,height,ABData["Batter"].values[ABIndexCounter])
                     if(math.isnan(height) or math.isnan(width)):
                         #print("NAN")
                         continue
-                    elif(height>37.20):
+                    elif(height>MAX_BALL_PLACEMENT_HEIGHT):
                         #print("EXCLUDING BALL",height,width,ABData["Batter"].values[ABIndexCounter])
                         continue
-                    elif(height<-13):
+                    elif(height<MIN_BALL_PLACEMENT_HEIGHT):
                         #print("HEIGHT LESS ZERO",height,ABData["Batter"].values[ABIndexCounter])
                         continue
-                    elif(width<-35):
+                    elif(width<MIN_BALL_PLACEMENT_WIDTH):
                         #print("WAY TO THE LEFT",width,ABData["Batter"].values[ABIndexCounter])
                         continue
-                    elif(width>35):
+                    elif(width>MAX_BALL_PLACEMENT_WIDTH):
                         #print("WAY TO THE RIGHT",width,ABData["Batter"].values[ABIndexCounter])
                         continue
 
