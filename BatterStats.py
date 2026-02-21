@@ -118,21 +118,39 @@ def applyPitchEdits(pdf):
     pdf.text(257,108,"Other")
 
 #END FUNCDEF
+#WE NEED PER PLAYER:
+
+#how many chases (swings on pithces out of zone, ho wmany were hit over out of zone)
+#seen which is fastball, changeup, or slider in a pie char, tiny, we can make bigger
+
+
+#DONE:
+#how many hard hits (pitch over 95mph)
+#how many hits over the whole game
+#plate appearances over the whole game
+#pitches over the whole game
+#pithces per plate appearances (divide)
+#how many strikeouts over the whole game
+#how many walks over the whole game
+#how many BIP (how many batted balls were in play, over total balls in play)
+#how many strikes out of the total pitches
+#how many swings over the total pitches
+#how many whiffs (strikes on swing) out of all the swings
+#average EV (Exit Velocity)
+
+#PER PLATE APPERANCE
+
+#Pitches, swings over pitches, whiffs over swings, swings over chases
+
+#
+
+#MAPPED OUT ON IMAGES:
+# Strike zone, type of pitch, result in zone (ball, foul ball no field, in play, strike call, strike swinging, ball in dirt
+# point on field where ball lands
+#
+
+#print(HitData)
 def genStats(filestring,outputname_batter):
-    #SPECIFIC ITEMS HERE
-    BATTER_TEAM = "HOU_COU"
-    TEAM_LOGO_FILE = "UH_Logo.png"
-    WIDTH_ADJUSTMENT = 16
-    HEIGHT_ADJUSTMENT = 16
-    MinWidth= ((-17.04/2)) #Zone left in inches
-    MaxWidth=((17.04/2)) #Zone right in inches
-    MinHeight=((19.44)) #Zone bottom (Above home plate) in inches
-    MaxHeight=((38.52)) #Zone top in inches
-    MAX_BALL_PLACEMENT_HEIGHT = 32.70 #Excludes if too high for PDF placement
-    MIN_BALL_PLACEMENT_HEIGHT = -13 #Excludes if too low for pdf placement
-    MAX_BALL_PLACEMENT_WIDTH = 35 #excludes if too much to the right
-    MIN_BALL_PLACEMENT_WIDTH = -35 #excludes if too much to the left
-    #END SPECIFIC ITEMS
     print(filestring)
     pd.options.display.max_rows = 100
     pd.options.display.max_columns = 100
@@ -143,12 +161,16 @@ def genStats(filestring,outputname_batter):
 
     #FUNCDEF
 
-    
+    MinWidth= ((-17.04/2))
+    MaxWidth=((17.04/2))
+    MinHeight=((19.44))
+    MaxHeight=((38.52))
     HitData = HitData.sort_values(by=["Batter","PitchNo"])
     HitData = HitData.dropna(how='all')
     BatterData = HitData[["Batter","BatterTeam","PitchNo","PitchofPA","PAofInning","TaggedPitchType","AutoPitchType","PitchCall","KorBB","TaggedHitType","PlayResult","ExitSpeed","Angle","Direction","Date","Time","ZoneSpeed","PlateLocHeight","PlateLocSide"]]
-    BatterData = BatterData[BatterData.BatterTeam == f"{BATTER_TEAM}"]
+    BatterData = BatterData[BatterData.BatterTeam == "HOU_COU"]
     #print(BatterData)
+    #print(HitData)
     try:
         DateString = HitData["Date"].values[0].split("-")
         DateString = DateString[1] + "/" + DateString[2] + "/" + DateString[0]
@@ -157,8 +179,7 @@ def genStats(filestring,outputname_batter):
 
     #PlayerData = pd.DataFrame(columns=["Batter","Plate App","Pitches","Hits","Strikeouts","Walks","Strikes","Swings","Whiffs","Chases","BABIP","HardHits","AvgEV","PitchType"])
     PlayerData = pd.DataFrame(columns=["Batter","Balls","Plate Appearances","Pitches","Pitches Per Plate App","Hits","Strikeouts","Walks","Strikes","Swings","Whiffs","Chases","BIP","AverageEV","HardHit (BIP/BIP>95)","Seen"])
-
-
+    print(BatterData)
     plateApp=0
     Batter = ""
     Pitches = 0
@@ -422,6 +443,8 @@ def genStats(filestring,outputname_batter):
     ABData = ABData.iloc[::-1].reset_index(drop=True)
     PlayerData = PlayerData.iloc[::-1].reset_index(drop=True)
 
+    #print(PlayerData)
+    #print(ABData)
     FourSliceArray = [[30,60],[170,60],[30,130],[170,130]]
     FourSliceStrikeArray = [[20,75],[160,75],[20,145],[160,145]]
     FourSliceOriginArray = [[36.25,109],[176.25,109],[36.25,179],[176.25,179]]
@@ -434,11 +457,12 @@ def genStats(filestring,outputname_batter):
         CurAB=1
         index+=1
         PACount = PlayerData["Plate Appearances"].values[index]
+        print(PACount)
         while(PACount>0):
             pdf.add_page()
             pdf.set_font('helvetica','B',20)
             pdf.set_fill_color(200,16,46)
-            pdf.image(os.getcwd()+f"\\ImgFiles\\{TEAM_LOGO_FILE}",10,8,20)
+            pdf.image(os.getcwd()+"\\ImgFiles\\UH_Logo.png",10,8,20)
             pdf.cell(0,12,PlayerData["Batter"].values[index].split(",")[1] + " " + PlayerData["Batter"].values[index].split(",")[0] + " - Post Game Hitter Report",False,1,'C')
             pdf.set_font('helvetica','B',15)
             pdf.cell(pdf.epw+8,8,DateString,False,ln=True,align='R')
@@ -460,8 +484,8 @@ def genStats(filestring,outputname_batter):
             create_table_statline([["PA","Pitches","PPA","Hits","Strikeouts","Walks","Strikes","Swings","Whiffs","Chases","BIP","HardHit","AvgEV","Balls"]],True,pdf)
             create_table_statline([PlayerData.loc[index][2:]],False,pdf)
             pdf.set_font('helvetica','B',10)
-            pdf.line(pdf.epw/2+9,67,pdf.epw/2+9,190) #vert line in center
-            pdf.line(10,125,270,125)#horiz line in center
+            pdf.line(pdf.epw/2+9,67,pdf.epw/2+9,190) #vert line
+            pdf.line(10,125,270,125)#horiz line
             #Putting in at bats
             ABFours = 0
             applyPitchEdits(pdf)
@@ -492,63 +516,64 @@ def genStats(filestring,outputname_batter):
                 pdf.set_fill_color(0,0,0)
                 pdf.set_xy(FourSliceOriginArray[ABFours][0],FourSliceOriginArray[ABFours][1])
                 for i in range(0,len(ABData["ZoneArray"].values[ABIndexCounter])):
-                    width = (ABData["ZoneArray"].values[ABIndexCounter][i][0]*12*25.4)/WIDTH_ADJUSTMENT
-                    height = ((ABData["ZoneArray"].values[ABIndexCounter][i][1]*12*25.4)-(19.44*25.4))/HEIGHT_ADJUSTMENT
+                    
+                    width = (ABData["ZoneArray"].values[ABIndexCounter][i][0]*12*25.4)/16
+                    height = ((ABData["ZoneArray"].values[ABIndexCounter][i][1]*12*25.4)-(19.44*25.4))/16
                     #print(width,height,ABData["Batter"].values[ABIndexCounter])
                     if(math.isnan(height) or math.isnan(width)):
                         #print("NAN")
                         continue
-                    elif(height>MAX_BALL_PLACEMENT_HEIGHT):
+                    elif(height>37.20):
                         #print("EXCLUDING BALL",height,width,ABData["Batter"].values[ABIndexCounter])
                         continue
-                    elif(height<MIN_BALL_PLACEMENT_HEIGHT):
+                    elif(height<-13):
                         #print("HEIGHT LESS ZERO",height,ABData["Batter"].values[ABIndexCounter])
                         continue
-                    elif(width<MIN_BALL_PLACEMENT_WIDTH):
+                    elif(width<-35):
                         #print("WAY TO THE LEFT",width,ABData["Batter"].values[ABIndexCounter])
                         continue
-                    elif(width>MAX_BALL_PLACEMENT_WIDTH):
+                    elif(width>35):
                         #print("WAY TO THE RIGHT",width,ABData["Batter"].values[ABIndexCounter])
                         continue
 
-                    
-                    if(ABData["PitchTypes"].values[ABIndexCounter][i]=="Fastball"):
-                        pdf.set_fill_color(255,0,0)
-                    elif(ABData["PitchTypes"].values[ABIndexCounter][i]=="ChangeUp"):
-                        pdf.set_fill_color(0,255,0)
-                    elif(ABData["PitchTypes"].values[ABIndexCounter][i]=="Slider"):
-                        pdf.set_fill_color(204,204,0)
-                    elif(ABData["PitchTypes"].values[ABIndexCounter][i]=="Curveball"):
-                        pdf.set_fill_color(255,165,0)
-                    elif(ABData["PitchTypes"].values[ABIndexCounter][i]=="Sinker"):
-                        pdf.set_fill_color(255,0,165)
-                    elif(ABData["PitchTypes"].values[ABIndexCounter][i]=="Splitter"):
-                        pdf.set_fill_color(229,204,255)
-                    elif(ABData["PitchTypes"].values[ABIndexCounter][i]=="Cutter"):
-                        pdf.set_fill_color(255,204,153)
-                    elif(ABData["PitchTypes"].values[ABIndexCounter][i]=="Knuckleball"):
-                        pdf.set_fill_color(153,153,255)
-                    elif(ABData["PitchTypes"].values[ABIndexCounter][i]=="Other" or ABData["PitchTypes"].values[ABIndexCounter][i]=="Undefined"):
-                        pdf.set_fill_color(224,224,224)
-                    #pdf.set_font('helvetica','',3)
-                    
-                    #print(pdf.get_x(),pdf.get_y())
-                    #print(ABIndexCounter, len(ABData["PitchTypes"].values[ABIndexCounter]),len(ABData["PitchResult"].values[ABIndexCounter]))
-                    if(ABData["PitchResult"].values[ABIndexCounter][i]=="Ball"):
-                        pdf.circle(pdf.get_x()+width,pdf.get_y()-height,radius=2.3,style='FD')
-                    elif(ABData["PitchResult"].values[ABIndexCounter][i]=="InPlay"):
-                        pdf.regular_polygon(pdf.get_x()+width-3,pdf.get_y()-height+3,polyWidth=6,rotateDegrees=90,numSides=3,style='FD')
-                        pass
-                    elif(ABData["PitchResult"].values[ABIndexCounter][i]=="Strike"):
-                        pdf.regular_polygon(pdf.get_x()+width-3,pdf.get_y()-height+3,polyWidth=6,rotateDegrees=270,numSides=3,style='FD')
-                    elif(ABData["PitchResult"].values[ABIndexCounter][i]=="StrikeSwinging"):
-                        pdf.regular_polygon(pdf.get_x()+width-3,pdf.get_y()-height+3,polyWidth=6,rotateDegrees=135,numSides=4,style='FD')
-                    elif(ABData["PitchResult"].values[ABIndexCounter][i]=="FoulBallNF"):
-                        pdf.regular_polygon(pdf.get_x()+width-3,pdf.get_y()-height+3,polyWidth=6,rotateDegrees=198,numSides=5,style='FD')
-                    pdf.text(pdf.get_x()+width-1 if (i+1)<10 else pdf.get_x()+width-2,pdf.get_y()-height+1,str(i+1))
-                    #print(pdf.x,pdf.y)
-                    #pdf.set_xy(FourSliceOriginArray[ABFours][0],FourSliceOriginArray[ABFours][1])
-                    #pdf.cell(pdf.get_x()+width,pdf.get_y()-height,str(i),False,ln=False)
+                    try:
+                        if(ABData["PitchTypes"].values[ABIndexCounter][i]=="Fastball"):
+                            pdf.set_fill_color(255,0,0)
+                        elif(ABData["PitchTypes"].values[ABIndexCounter][i]=="ChangeUp"):
+                            pdf.set_fill_color(0,255,0)
+                        elif(ABData["PitchTypes"].values[ABIndexCounter][i]=="Slider"):
+                            pdf.set_fill_color(204,204,0)
+                        elif(ABData["PitchTypes"].values[ABIndexCounter][i]=="Curveball"):
+                            pdf.set_fill_color(255,165,0)
+                        elif(ABData["PitchTypes"].values[ABIndexCounter][i]=="Sinker"):
+                            pdf.set_fill_color(255,0,165)
+                        elif(ABData["PitchTypes"].values[ABIndexCounter][i]=="Splitter"):
+                            pdf.set_fill_color(229,204,255)
+                        elif(ABData["PitchTypes"].values[ABIndexCounter][i]=="Cutter"):
+                            pdf.set_fill_color(255,204,153)
+                        elif(ABData["PitchTypes"].values[ABIndexCounter][i]=="Knuckleball"):
+                            pdf.set_fill_color(153,153,255)
+                        elif(ABData["PitchTypes"].values[ABIndexCounter][i]=="Other" or ABData["PitchTypes"].values[ABIndexCounter][i]=="Undefined"):
+                            pdf.set_fill_color(224,224,224)
+                        #pdf.set_font('helvetica','',3)
+                        
+                        #print(pdf.get_x(),pdf.get_y())
+                        #print(ABIndexCounter, len(ABData["PitchTypes"].values[ABIndexCounter]),len(ABData["PitchResult"].values[ABIndexCounter]))
+                        
+                        if(ABData["PitchResult"].values[ABIndexCounter][i]=="Ball"):
+                            pdf.circle(pdf.get_x()+width,pdf.get_y()-height,radius=2.3,style='FD')
+                        elif(ABData["PitchResult"].values[ABIndexCounter][i]=="InPlay"):
+                            pdf.regular_polygon(pdf.get_x()+width-3,pdf.get_y()-height+3,polyWidth=6,rotateDegrees=90,numSides=3,style='FD')
+                            pass
+                        elif(ABData["PitchResult"].values[ABIndexCounter][i]=="Strike"):
+                            pdf.regular_polygon(pdf.get_x()+width-3,pdf.get_y()-height+3,polyWidth=6,rotateDegrees=270,numSides=3,style='FD')
+                        elif(ABData["PitchResult"].values[ABIndexCounter][i]=="StrikeSwinging"):
+                            pdf.regular_polygon(pdf.get_x()+width-3,pdf.get_y()-height+3,polyWidth=6,rotateDegrees=135,numSides=4,style='FD')
+                        elif(ABData["PitchResult"].values[ABIndexCounter][i]=="FoulBallNF"):
+                            pdf.regular_polygon(pdf.get_x()+width-3,pdf.get_y()-height+3,polyWidth=6,rotateDegrees=198,numSides=5,style='FD')
+                        pdf.text(pdf.get_x()+width-1 if (i+1)<10 else pdf.get_x()+width-2,pdf.get_y()-height+1,str(i+1))
+                    except:
+                        print("Skipping unregistered pitch by ",ABData["Batter"].values[ABIndexCounter],"for AB #",CurAB,"pitch",i)
                     
                 
                 ABFours+=1
