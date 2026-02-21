@@ -179,7 +179,6 @@ def genStats(filestring,outputname_batter):
 
     #PlayerData = pd.DataFrame(columns=["Batter","Plate App","Pitches","Hits","Strikeouts","Walks","Strikes","Swings","Whiffs","Chases","BABIP","HardHits","AvgEV","PitchType"])
     PlayerData = pd.DataFrame(columns=["Batter","Balls","Plate Appearances","Pitches","Pitches Per Plate App","Hits","Strikeouts","Walks","Strikes","Swings","Whiffs","Chases","BIP","AverageEV","HardHit (BIP/BIP>95)","Seen"])
-    print(BatterData)
     plateApp=0
     Batter = ""
     Pitches = 0
@@ -457,7 +456,6 @@ def genStats(filestring,outputname_batter):
         CurAB=1
         index+=1
         PACount = PlayerData["Plate Appearances"].values[index]
-        print(PACount)
         while(PACount>0):
             pdf.add_page()
             pdf.set_font('helvetica','B',20)
